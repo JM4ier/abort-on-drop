@@ -7,6 +7,7 @@
 use std::future::Future;
 use std::ops::Deref;
 use std::pin::Pin;
+use std::process::Child;
 use std::task::{Context, Poll};
 use tokio::task::JoinHandle;
 
@@ -31,6 +32,18 @@ impl<T> Future for ChildTask<T> {
 impl<T> From<JoinHandle<T>> for ChildTask<T> {
     fn from(inner: JoinHandle<T>) -> Self {
         Self { inner }
+    }
+}
+
+pub trait AbortOnDrop {
+    type Output;
+    fn abort_on_drop(self) -> Self::Output;
+}
+impl<T> AbortOnDrop for JoinHandle<T> {
+    type Output = ChildTask<T>;
+
+    fn abort_on_drop(self) -> Self::Output {
+        self.into()
     }
 }
 
